@@ -10,17 +10,15 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
-# Debug tip requested by the user
-print("KEY CHECK:", os.getenv("GROQ_API_KEY"))
-
+# Try to get API key
 api_key = os.getenv("GROQ_API_KEY")
-if not api_key:
-    print("Warning: GROQ_API_KEY not found in environment.")
-
-client = Groq(api_key=api_key)
 
 def generate_response(message: str) -> str:
+    if not api_key:
+        return "Error: GROQ_API_KEY is not set in Render environment variables."
+        
     try:
+        client = Groq(api_key=api_key)
         completion = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[
