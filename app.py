@@ -1,21 +1,17 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 import os
-from dotenv import load_dotenv
 from groq import Groq
 
-# Load environment variables (Render automatically deta hai, local ke liye fallback)
-if not os.getenv("GROQ_API_KEY"):
-    load_dotenv()
+app = FastAPI()
 
+# Get API key from environment (Render se aayega)
 api_key = os.getenv("GROQ_API_KEY")
 
 if not api_key:
     raise ValueError("❌ GROQ_API_KEY not found!")
 
 client = Groq(api_key=api_key)
-
-app = FastAPI()
 
 # Request schema
 class ChatRequest(BaseModel):
