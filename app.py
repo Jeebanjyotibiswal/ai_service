@@ -1,16 +1,14 @@
-from fastapi import FastAPI
-from pydantic import BaseModel
-class ChatRequest(BaseModel):
-    message: str
-app = FastAPI()
-
-
+from flask import Flask, request, jsonify
+from flask_cors import CORS
 from dotenv import load_dotenv
 import os
 from groq import Groq
 
-# Load environment variables (useful for local development)
+# Load environment variables
 load_dotenv()
+
+app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
 
 # Debug tip requested by the user
 print("KEY CHECK:", os.getenv("GROQ_API_KEY"))
@@ -34,7 +32,21 @@ def generate_response(message: str) -> str:
     except Exception as e:
         return f"Error: {str(e)}"
 
-@app.post("/chat")
-def chat(request: ChatRequest):
-    response = generate_response(request.message)
-    return {"reply": response}
+@app.route("/chat", methods=["POST"])
+def chat():
+    data = request.get_json()
+    message = data.get("message", "")
+    response = generate_response(message)
+    return jsonify({"reply": response})
+
+@app.route("/predict", methods=["POST"])
+def predict():
+    # Placeholder for ML prediction logic as per user instructions
+    data = request.get_json()
+    message = data.get("message", "")
+    response = generate_response(message)
+    return jsonify({"reply": response})
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
