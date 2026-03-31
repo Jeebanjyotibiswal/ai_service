@@ -1,8 +1,4 @@
-flask
-flask-cors
-gunicorn
-numpy
-pandas
-scikit-learn
-groq
+fastapi
+uvicorn
 python-dotenv
+groq
