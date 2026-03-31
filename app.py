@@ -1,29 +1,36 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-class ChatRequest(BaseModel):
-    message: str
-app = FastAPI()
-
-
-from dotenv import load_dotenv
 import os
-
+from dotenv import load_dotenv
 from groq import Groq
 
-# Load environment variables (local fallback)
-if not os.getenv("GROQ_API_KEY"):
-    env_path = os.path.join(os.path.dirname(__file__), "..", ".env")
-    if os.path.exists(env_path):
-        load_dotenv(env_path)
+# Load environment variables
+load_dotenv()
 
+class ChatRequest(BaseModel):
+    message: str
+
+app = FastAPI()
+
+# Enable CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Adjust this for better security in production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# API Key check
 api_key = os.getenv("GROQ_API_KEY")
-if not api_key:
-    print("Warning: GROQ_API_KEY not found in environment.")
-
-client = Groq(api_key=api_key)
 
 def generate_response(message: str) -> str:
+    if not api_key:
+        return "Error: GROQ_API_KEY is not set in Render environment variables."
+        
     try:
+        client = Groq(api_key=api_key)
         completion = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[
@@ -33,9 +40,14 @@ def generate_response(message: str) -> str:
         )
         return completion.choices[0].message.content
     except Exception as e:
+        print(f"Groq Error: {str(e)}")
         return f"Error: {str(e)}"
 
 @app.post("/chat")
-def chat(request: ChatRequest):
+async def chat(request: ChatRequest):
     response = generate_response(request.message)
     return {"reply": response}
+
+@app.get("/health")
+def health_check():
+    return {"status": "ok", "api_key_set": api_key is not None}
